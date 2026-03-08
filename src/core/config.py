@@ -31,3 +31,7 @@ class VisionConfig:
     # State machine — seconds
     confirm_duration: float = 2.0
     clear_duration: float = 1.0
+
+    # Notifications
+    notifications_enabled: bool = True
+    notification_cooldown: float = 30.0

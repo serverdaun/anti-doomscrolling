@@ -6,6 +6,7 @@ import cv2
 from src.core.config import VisionConfig
 from src.core.logging import setup_logging
 from src.core.state_machine import DoomscrollStateMachine
+from src.notifications import MacOSNotifier, NotificationDispatcher
 from src.vision.capture.camera import Camera
 from src.vision.overlay import Overlay
 from src.vision.pipeline import VisionPipeline
@@ -29,8 +30,13 @@ def main() -> None:
     state_machine = DoomscrollStateMachine(config)
     overlay = Overlay()
 
+    dispatcher = NotificationDispatcher()
+    if config.notifications_enabled:
+        dispatcher.add(MacOSNotifier(cooldown=config.notification_cooldown))
+
     frame_interval = 1.0 / config.target_fps
     fps = 0.0
+    prev_state = state_machine.state
 
     camera.start()
     logger.info("Anti-doomscroll detector running. Press 'q' to quit.")
@@ -53,6 +59,10 @@ def main() -> None:
             state = state_machine.update(
                 phone_detected, looking_at_screen, face_detected
             )
+
+            if state != prev_state:
+                dispatcher.on_state_change(state, prev_state)
+                prev_state = state
 
             annotated = overlay.draw(
                 frame,
